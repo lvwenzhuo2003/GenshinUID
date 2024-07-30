@@ -19,6 +19,17 @@ already = 0
 # 签到函数
 async def sign_in(uid: str) -> str:
     logger.info(f'[签到] {uid} 开始执行签到')
+
+    # 检查验证码系统余额
+    if core_plugins_config.get_config('CaptchaPass').data:
+        logger.info(f'[签到] 正在检查验证码系统余额...')
+        from gsuid_core.utils.api.mys.pass_request import PassMysApi
+        pass_mys_api = PassMysApi()
+        balance = await pass_mys_api.get_pass_api_balance(api_key=core_plugins_config.get_config("_pass_API_key").data)
+        logger.info(f'[签到] 当前验证码系统余额: US${balance}')
+    else:
+        balance = "未开启验证码绕过"
+
     # 获得签到信息
     sign_info = await mys_api.get_sign_info(uid)
     # 初步校验数据
@@ -32,7 +43,7 @@ async def sign_in(uid: str) -> str:
         day_of_month = int(sign_info['today'].split('-')[-1])
         signed_count = int(sign_info['total_sign_day'])
         sign_missed = day_of_month - signed_count
-        return f'今日已签到！本月漏签次数：{sign_missed}'
+        return f'今日已签到！本月漏签次数：{sign_missed}\n当前验证码系统余额：US${balance}'
 
     # 实际进行签到
     Header = {}
@@ -113,7 +124,7 @@ async def sign_in(uid: str) -> str:
         mes_im = '签到失败...'
         sign_missed -= 1
     sign_missed = sign_info.get('sign_cnt_missed') or sign_missed
-    im = f'{mes_im}!\n{get_im}\n本月漏签次数：{sign_missed}'
+    im = f'{mes_im}!\n{get_im}\n本月漏签次数：{sign_missed}\n当前验证码系统余额：US${balance}'
     logger.info(
         f'[签到] {uid} 签到完成, 结果: {mes_im}, 漏签次数: {sign_missed}'
     )
