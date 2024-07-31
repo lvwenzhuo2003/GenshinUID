@@ -35,7 +35,7 @@ async def get_sign_func(bot: Bot, ev: Event):
     if uid is None:
         return await bot.send(UID_HINT)
     await bot.logger.info('[签到]UID: {}'.format(uid))
-    await bot.send(await sign_in(uid))
+    await bot.send(await sign_in(uid=uid, bot=bot))
 
 
 @sv_sign_config.on_fullmatch('全部重签')

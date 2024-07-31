@@ -2,6 +2,7 @@ import random
 import asyncio
 from copy import deepcopy
 
+from gsuid_core.bot import Bot
 from gsuid_core.gss import gss
 from gsuid_core.logger import logger
 from gsuid_core.utils.error_reply import get_error
@@ -17,7 +18,7 @@ already = 0
 
 
 # 签到函数
-async def sign_in(uid: str) -> str:
+async def sign_in(uid: str, bot: Bot) -> str:
     logger.info(f'[签到] {uid} 开始执行签到')
 
     # 检查验证码系统余额
@@ -57,6 +58,7 @@ async def sign_in(uid: str) -> str:
             # 出现校验码
             if sign_data['risk_code'] == 375:
                 if core_plugins_config.get_config('CaptchaPass').data:
+                    await bot.send("验证码绕过程序已启动")
                     gt = sign_data['gt']
                     ch = sign_data['challenge']
                     vl, ch = await mys_api._pass(gt, ch, Header)
@@ -65,6 +67,7 @@ async def sign_in(uid: str) -> str:
                         Header['x-rpc-challenge'] = ch
                         Header['x-rpc-validate'] = vl
                         Header['x-rpc-seccode'] = f'{vl}|jordan'
+                        await bot.send("验证码结果已获取")
                         logger.info(
                             f'[签到] {uid} 已获取验证码, 等待时间{delay}秒'
                         )
