@@ -30,7 +30,7 @@ async def get_all_update_log() -> List:
     log_list2 = await update_from_git(0, core_repo_path, log_config, True)
     im = []
     if len(log_list1) == 0:
-        im.append('gsuid_v4更新失败!更多消息请查看控制台...以下为记录:')
+        im.append('gsuid_v4更新失败!更多消息请查看日志...以下为记录:')
         im.append(UPDATE_HINT)
     else:
         im.append('gsuid_v4更新成功!')

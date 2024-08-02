@@ -5,7 +5,7 @@ from copy import deepcopy
 from gsuid_core.bot import Bot
 from gsuid_core.gss import gss
 from gsuid_core.logger import logger
-from gsuid_core.utils.error_reply import get_error
+from gsuid_core.utils.error_reply import get_error, _start
 from gsuid_core.utils.database.models import GsUser
 from gsuid_core.utils.plugins_config.gs_config import core_plugins_config
 
@@ -73,11 +73,7 @@ async def sign_in(uid: str, bot: Bot) -> str:
                         )
                         await asyncio.sleep(delay)
                     else:
-                        delay = 605 + random.randint(1, 120)
-                        logger.info(
-                            f'[签到] {uid} 未获取验证码,等待{delay}秒后重试...'
-                        )
-                        await asyncio.sleep(delay)
+                        return f'签到失败，请稍后再试！\n验证码解决服务返回了一个错误：{ch}\n如反复出现错误，请尝试[{_start}刷新ck]以刷新ck并重试！'
                     continue
                 else:
                     logger.info(
