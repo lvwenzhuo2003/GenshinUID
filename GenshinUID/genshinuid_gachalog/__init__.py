@@ -75,13 +75,30 @@ async def send_export_gacha_info(bot: Bot, ev: Event):
     uid = await GsBind.get_uid_by_game(ev.user_id, ev.bot_id)
     if uid is None:
         return await bot.send(UID_HINT)
-    export = await export_gachalogs(uid)
+
+    resp = await bot.receive_resp(
+        '❓请问你要导出哪个版本的UIGF文件？\n➡可选：v2、v4',
+    )
+
+    version = '2'
+    if resp is not None:
+        msg = resp.text.strip()
+        if msg in ['v2', 'v4', '2', '4']:
+            version = msg.replace('v', '')
+        else:
+            return await bot.send(
+                '❌请输入正确的版本号噢！(可选：v2、v4)\n本次导出终止...'
+            )
+    await bot.send(f'🔜即将为你导出UIGFv{version}文件，请耐心等待...')
+
+    export = await export_gachalogs(uid, version)
     if export['retcode'] == 'ok':
         file_name = export['name']
         file_path = export['url']
-        return await bot.send(MessageSegment.file(file_path, file_name))
+        await bot.send(MessageSegment.file(file_path, file_name))
+        await bot.send(f'✅导出UIGFv{version}文件成功！')
     else:
-        return await bot.send('导出抽卡记录失败...')
+        await bot.send('导出抽卡记录失败...')
 
 
 @sv_import_lelaer_gachalog.on_fullmatch(('从小助手导入抽卡记录'))
