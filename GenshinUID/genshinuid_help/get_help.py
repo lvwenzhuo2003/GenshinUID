@@ -6,6 +6,7 @@ from PIL import Image
 from msgspec import json as msgjson
 from gsuid_core.help.model import PluginHelp
 from gsuid_core.help.draw_plugin_help import get_help
+from gsuid_core.sv import get_plugin_available_prefix
 from gsuid_core.help.draw_new_plugin_help import get_new_help
 
 from ..genshinuid_config.gs_config import gsconfig
@@ -45,7 +46,7 @@ async def get_core_help() -> Union[bytes, str]:
         plugin_info={f'v{GenshinUID_version}': ''},
         plugin_icon=Image.open(ICON),
         plugin_help=await get_help_data(),
-        plugin_prefix='',
+        plugin_prefix=get_plugin_available_prefix('GenshinUID'),
         help_mode='dark',
         banner_bg=BANNER_BG,
         cag_bg=CAG_BG,
@@ -73,5 +74,4 @@ async def get_core_help() -> Union[bytes, str]:
         column=column,
         extra_message=[f'数据版本 {Genshin_version}'],
     )
-    return img
     return img
