@@ -39,11 +39,17 @@ from GenshinUID.utils.map.GS_MAP_PATH import (  # noqa: E402
 )
 
 from ..version import Genshin_version  # noqa: E402
-from ..utils.ambr_to_minigg import convert_ambr_to_minigg  # noqa: E402
+from ..utils.ambr_to_minigg import (  # noqa: E402
+    get_ambr_char_data,
+    get_ambr_weapon_data,
+    convert_ambr_to_minigg,
+)
 
 R_PATH = Path(__file__).parents[0]
 MAP_PATH = Path(__file__).parents[1] / 'utils' / 'map' / 'data'
 DATA_PATH = R_PATH / 'gs_data'
+CHAR_PATH = DATA_PATH / 'char'
+WEAPON_PATH = DATA_PATH / 'weapon'
 WEAPON_TYPE = {
     'WEAPON_POLE': '长柄武器',
     'WEAPON_BOW': '弓',
@@ -54,13 +60,16 @@ WEAPON_TYPE = {
 
 version = Genshin_version
 raw_data = {}
-
+weaponList = {}
 
 BETA_CHAR = {
     '10000100': '卡齐娜',
     '10000101': '基尼奇',
     '10000102': '玛拉妮',
 }
+
+CHAR_PATH.mkdir(exist_ok=True)
+WEAPON_PATH.mkdir(exist_ok=True)
 
 
 async def weaponId2Name():
@@ -310,11 +319,15 @@ async def avatarName2ElementJson() -> None:
         if _id in ['10000005', '10000007'] or int(_id) >= 11000000:
             continue
         name = avatarId2Name[_id]
-        data = httpx.get(
-            f'https://info.minigg.cn/characters?query={name}'
-        ).json()
-        if 'retcode' in data:
+        try:
+            data = httpx.get(
+                f'https://info.minigg.cn/characters?query={name}'
+            ).json()
+            if 'retcode' in data:
+                data = await convert_ambr_to_minigg(_id)
+        except json.decoder.JSONDecodeError:
             data = await convert_ambr_to_minigg(_id)
+
         if data is not None and 'code' not in data:
             temp[name] = elementMap[data['elementText']]
             try:
@@ -489,6 +502,7 @@ async def artifact2attrJson() -> None:
 
 
 async def restore_hakush_data():
+    global weaponList
     data = await get_hakush_char_list()
     data2 = await get_hakush_weapon_list()
 
@@ -498,6 +512,8 @@ async def restore_hakush_data():
     with open(MAP_PATH / weaponList_fileName, 'w', encoding='UTF-8') as f:
         json.dump(data2, f, ensure_ascii=False)
 
+    weaponList = data2
+
 
 async def restore_mysData():
     base_url = 'https://api-takumi.mihoyo.com'
@@ -506,7 +522,33 @@ async def restore_mysData():
         json.dump(resp.json(), f, ensure_ascii=False)
 
 
+async def save_all_weapon_data():
+    global weaponList
+    if not weaponList:
+        with open(MAP_PATH / weaponList_fileName, 'r', encoding='UTF-8') as f:
+            weaponList = json.load(f)
+
+    for i in weaponList:
+        print(i)
+        data = await get_ambr_weapon_data(i)
+        if data:
+            with open(WEAPON_PATH / f'{i}.json', 'w', encoding='UTF-8') as f:
+                json.dump(data, f, ensure_ascii=False)
+
+
+async def save_all_char_data():
+    with open(MAP_PATH / charList_fileName, 'r', encoding='UTF-8') as f:
+        charList = json.load(f)
+
+    for i in charList:
+        print(i)
+        rdata = await get_ambr_char_data(i)
+        with open(CHAR_PATH / f'{i}.json', 'w', encoding='UTF-8') as f:
+            json.dump(rdata, f, ensure_ascii=False)
+
+
 async def main():
+    '''
     await download_new_file()
     await restore_mysData()
     await restore_hakush_data()
@@ -526,6 +568,9 @@ async def main():
     await artifact2attrJson()
     await weaponId2Name()
     await avatarId2SkillGroupList()
+    '''
+    await save_all_weapon_data()
+    await save_all_char_data()
 
 
 asyncio.run(main())
