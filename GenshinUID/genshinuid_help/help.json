@@ -322,14 +322,6 @@
         "need_admin": false
       },
       {
-        "name": "查询[角色]成长曲线",
-        "desc": "输出当前角色成长表",
-        "eg": "查询刻晴曲线",
-        "need_ck": false,
-        "need_sk": false,
-        "need_admin": false
-      },
-      {
         "name": "查询展柜角色",
         "desc": "查询所有已缓存角色列表",
         "eg": "查询展柜角色",
@@ -399,9 +391,9 @@
         "need_admin": false
       },
       {
-        "name": "圣遗物排行榜",
+        "name": "圣遗物排名",
         "desc": "查看圣遗物全球排名",
-        "eg": "圣遗物排行榜暴击伤害",
+        "eg": "圣遗物排名暴击伤害",
         "need_ck": false,
         "need_sk": false,
         "need_admin": false

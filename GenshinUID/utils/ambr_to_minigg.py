@@ -3,6 +3,7 @@ import json
 from typing import List, Union, Optional, TypedDict, cast
 
 import aiofiles
+from gsuid_core.logger import logger
 from gsuid_core.utils.api.minigg.models import CharacterTalents
 from gsuid_core.utils.api.ambr.request import (
     get_ambr_char_data,
@@ -115,7 +116,7 @@ class ConvertCharacter(TypedDict):
 
 
 async def convert_exist_data_to_char(
-    char_id: Union[str, int]
+    char_id: Union[str, int], element: Optional[str] = None
 ) -> ConvertCharacter:
     path = CHAR_DATA_PATH / f'{char_id}.json'
     if path.exists():
@@ -124,22 +125,35 @@ async def convert_exist_data_to_char(
     else:
         raw_data = await get_ambr_char_data(char_id)
         if raw_data is None:
+            logger.error(f'[AmbrData] 未找到该角色{char_id}/数据无法下载!')
             raise Exception('[AmbrData] 未找到该角色/数据无法下载!')
         # 保存
         async with aiofiles.open(path, 'w', encoding='utf-8') as f:
             await f.write(json.dumps(raw_data))
+
+    substatText = PROP_MAP[
+        list(raw_data['upgrade']['promote'][-1]['addProps'].keys())[-1]
+    ]
+    sp = raw_data['upgrade']['promote'][-1]['addProps'][
+        list(raw_data['upgrade']['promote'][-1]['addProps'].keys())[-1]
+    ]
+
+    if substatText == '暴击伤害':
+        sp += 0.5
+    elif substatText == '暴击率':
+        sp += 0.05
 
     result = {
         'name': raw_data['name'],
         'title': raw_data['fetter']['title'],
         'rarity': raw_data['rank'],
         'weapontype': WEAPON_TYPE[raw_data['weaponType']],
-        'elementText': ELEMENT_MAP[raw_data['element']],
-        'element': ELEMENT_MAP[raw_data['element']],
+        'elementText': (
+            element if element else ELEMENT_MAP[raw_data['element']]
+        ),
+        'element': element if element else ELEMENT_MAP[raw_data['element']],
         'images': {'namesideicon': raw_data['icon']},  # 暂时适配
-        'substatText': PROP_MAP[
-            list(raw_data['upgrade']['promote'][-1]['addProps'].keys())[-1]
-        ],
+        'substatText': substatText,
         'hp': raw_data['upgrade']['prop'][0]['initValue']
         * GROW_CURVE_LIST[89]['curveInfos'][
             TYPE_TO_INT[raw_data['upgrade']['prop'][0]['type']]
@@ -159,9 +173,7 @@ async def convert_exist_data_to_char(
         + raw_data['upgrade']['promote'][-1]['addProps'][
             'FIGHT_PROP_BASE_DEFENSE'
         ],
-        'specialized': raw_data['upgrade']['promote'][-1]['addProps'][
-            list(raw_data['upgrade']['promote'][-1]['addProps'].keys())[-1]
-        ],
+        'specialized': sp,
     }
     return cast(ConvertCharacter, result)
 
@@ -221,7 +233,7 @@ async def convert_ambr_to_weapon(
             effect_up[affix],
         )
 
-        result[f'r{index+1}'] = {'description': effect_desc}
+        result[f'r{index+1}'] = {'description': effect_desc, 'values': []}
     else:
         if index != 0:
             result['effectTemplateRaw'] = result[f'r{index+1}']['description']
@@ -238,9 +250,9 @@ async def convert_ambr_to_weapon(
 
 
 async def convert_ambr_to_minigg(
-    char_id: Union[str, int]
+    char_id: Union[str, int], element
 ) -> Optional[ConvertCharacter]:
-    return await convert_exist_data_to_char(char_id)
+    return await convert_exist_data_to_char(char_id, element)
 
 
 async def convert_ambr_to_talent(
@@ -308,4 +320,5 @@ async def convert_ambr_to_talent(
                 result[f'combat{index+1}']['attributes']['parameters'][
                     para
                 ].append(talent_data[i]['promote'][level]['params'][ig])
+    return cast(CharacterTalents, result)
     return cast(CharacterTalents, result)

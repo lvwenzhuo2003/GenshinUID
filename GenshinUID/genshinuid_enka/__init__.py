@@ -104,7 +104,7 @@ async def send_my_role_rank_pic(bot: Bot, ev: Event):
     await bot.send_option(im, [a, c, b, d])
 
 
-@sv_akasha.on_command('圣遗物排名')
+@sv_akasha.on_command(('圣遗物排名', '圣遗物排行榜'))
 async def send_arti_rank_pic(bot: Bot, ev: Event):
     # 获取排序名
     msg = ''.join(re.findall('[\u4e00-\u9fa5 ]', ev.text))
@@ -338,6 +338,9 @@ async def send_card_info(bot: Bot, ev: Event):
     logger.info('[强制刷新]uid: {}'.format(uid))
     if EnableCharCardByMys:
         im = await mys_to_card(uid)
+        if not isinstance(im, Tuple):
+            logger.info(f'从米游社获取数据失败，尝试从enka获取。{im}')
+            im = await enka_to_card(uid)
     else:
         im = await enka_to_card(uid)
     logger.info(f'UID{uid}获取角色数据成功！')
